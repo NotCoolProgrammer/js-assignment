@@ -4,6 +4,7 @@ let allUsers = [];
 let allGroups = [];
 let allRights = [];
 
+
 // Возвращает массив всех пользователей.
 function users() {
     return allUsers;
@@ -13,7 +14,8 @@ function users() {
 function createUser(name, password) {
     let user = {
         name: name,
-        password: password
+        password: password,
+        groups: []
     }
 
     allUsers.push(user)
@@ -23,29 +25,56 @@ function createUser(name, password) {
 // Удаляет пользователя user
 function deleteUser(user) {
     if (!user) {
-        throw Error('hello');
+        throw Error('Неправильные входные данные');
     }
 
     if (allUsers.indexOf(user) === -1) {
-        throw Error('111111');
+        throw Error('Пользователь уже был удален ранее');
     }
 
     allUsers.splice(allUsers.indexOf(user), 1);
 }
 
 // Возвращает массив групп, к которым принадлежит пользователь user
-function userGroups(user) {}
+function userGroups(user) {
+   return user.groups;
+}
 
 // Добавляет пользователя user в группу group
-function addUserToGroup(user, group) {}
+function addUserToGroup(user, group) {
+
+    if (allUsers.indexOf(user) === -1) {
+        throw Error ('Не существует пользователя');
+    }
+
+    if (allGroups.indexOf(group) === -1) {
+        throw Error ('Не существует группы');
+    }
+
+    allUsers[allUsers.indexOf(user)].groups.push(group);
+
+}
 
 // Удаляет пользователя user из группы group. Должна бросить исключение, если пользователя user нет в группе group
-function removeUserFromGroup(user, group) {}
+function removeUserFromGroup(user, group) {
+    if (allUsers.indexOf(user) === -1) {
+        throw Error ('Не существует пользователя');
+    }
+
+    if (allGroups.indexOf(group) === -1) {
+        throw Error ('Не существует группы');
+    }
+
+    if (allUsers[allUsers.indexOf(user)].groups.length === 0) {
+        throw Error ("Некорректные данные");
+    }
+
+    allUsers[allUsers.indexOf(user)].groups.splice(allUsers[allUsers.indexOf(user)].groups.indexOf(group, 1));
+
+}
 
 // Возвращает массив прав
 function rights() {
-    // let rights = ['view content', 'edit content', 'delete content', 'add content'];
-    // rights.push(allRights);
     return allRights;
 }
 
@@ -62,7 +91,7 @@ function createRight(name) {
 // Удаляет право right
 function deleteRight(right) {
     if (!right) {
-        throw Error('It is not a group');
+        throw Error('It is not a right');
     }
 
     if (allRights.indexOf(right) === -1) {
@@ -74,44 +103,14 @@ function deleteRight(right) {
 
 // Возвращает массив групп
 function groups() {
-    // let groups = [
-    //     {
-    //         "admin": [allRights[0], allRights[1], allRights[2], allRights[3]]
-    //     },
-    //     {
-    //         "developer": [allRights[1], allRights[3], allRights[2]],
-    //     },
-    //     {
-    //         "user": [allRights[0]]
-    //     }
-    //     // "admin": [allRights[0], allRights[1], allRights[2], allRights[3]],
-    //     // "developer": [allRights[1], allRights[3], allRights[2]],
-    //     // "user": [allRights[0]]
-    // ]
-
-
-    // groups.push(allGroups);
     return allGroups;
 }
 
 // Создает новую группу и возвращает её.
 function createGroup(name) {
-    // let groups = [
-    //     {
-    //         "admin": [allRights[0], allRights[1], allRights[2], allRights[3]]
-    //     },
-    //     {
-    //         "developer": [allRights[1], allRights[3], allRights[2]],
-    //     },
-    //     {
-    //         "user": [allRights[0]]
-    //     }
-    // ];
-    // groups.push(allGroups);
-    // return groups;
-
     let group = {
-        name: name
+        name: name,
+        rights: []                          //#новое
     }
     allGroups.push(group);
     return group;
@@ -131,13 +130,37 @@ function deleteGroup(group) {
 }
 
 // Возвращает массив прав, которые принадлежат группе group
-function groupRights() {}
+function groupRights(group) {
+    return group.rights;
+}
 
 // Добавляет право right к группе group
-function addRightToGroup() {}
+function addRightToGroup(right, group) {
+    if (allRights.indexOf(right) === -1) {
+        throw Error ('Не существует права');
+    }
+
+    if (allGroups.indexOf(group) === -1) {
+        throw Error ('Не существует группы');
+    }
+    group.rights.push(right);
+}
 
 // Удаляет право right из группы group. Должна бросить исключение, если права right нет в группе group
-function removeRightFromGroup() {}
+function removeRightFromGroup(right, group) {
+    if (allRights.indexOf(right) === -1) {
+        throw Error ('Не существует права');
+    }
+
+    if (allGroups.indexOf(group) === -1) {
+        throw Error ('Не существует группы');
+    }
+
+    if (allGroups[allGroups.indexOf(group)].rights.length === 0) {
+        throw Error ("Некорректные данные");
+    }
+    allGroups[allGroups.indexOf(group)].rights.splice(allGroups[allGroups.indexOf(group)].rights.indexOf(group, 1));
+}
 
 function login(username, password) {}
 
