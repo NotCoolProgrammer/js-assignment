@@ -110,7 +110,7 @@ function groups() {
 function createGroup(name) {
     let group = {
         name: name,
-        rights: []                          //#новое
+        rights: []
     }
     allGroups.push(group);
     return group;
@@ -162,10 +162,38 @@ function removeRightFromGroup(right, group) {
     allGroups[allGroups.indexOf(group)].rights.splice(allGroups[allGroups.indexOf(group)].rights.indexOf(group, 1));
 }
 
-function login(username, password) {}
+function login(username, password) {
+    for (let i = 0; i < allUsers.length; i++) {
+        if (allUsers[i].name === username && allUsers[i].password === password) {
+            return true;
+        }
+    }
+}
 
-function currentUser() {}
+function currentUser() {
+    
+}
 
-function logout() {}
+function logout() {
+    
+}
 
-function isAuthorized(user, right) {}
+function isAuthorized(user, right) {
+    // user.groups.forEach(group => {      //тут вообще игнорируются все последующие права в группе, считывется только первое
+    //     if (group.rights[allRights.indexOf(right)].name === right.name) {
+    //         return true
+    //     }
+    // });
+
+    // user.groups.forEach(group => {
+    //     group.rights.forEach(onlyRight => {
+    //         if (onlyRight.name === right.name) {
+    //             return true;
+    //         }
+    //     })
+    // });
+
+    user.groups.some(group => {                 //не выходит из функции после первого найденного совпадения
+        group.rights.some(element => element.name === right.name);
+    });
+}
