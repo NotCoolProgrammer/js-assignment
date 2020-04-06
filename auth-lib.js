@@ -3,6 +3,8 @@
 let allUsers = [];
 let allGroups = [];
 let allRights = [];
+let rightsInGroups = {};
+let session = {};
 
 
 // Возвращает массив всех пользователей.
@@ -18,18 +20,18 @@ function createUser(name, password) {
         groups: []
     }
 
-    allUsers.push(user)
+    allUsers.push(user);
     return user;
 }
 
 // Удаляет пользователя user
 function deleteUser(user) {
     if (!user) {
-        throw Error('Неправильные входные данные');
+        throw new Error('Неправильные входные данные');
     }
 
-    if (allUsers.indexOf(user) === -1) {
-        throw Error('Пользователь уже был удален ранее');
+    if (!allUsers.includes(user)) {
+        throw new Error(`Пользователь уже был удален ранее`);
     }
 
     allUsers.splice(allUsers.indexOf(user), 1);
@@ -43,12 +45,12 @@ function userGroups(user) {
 // Добавляет пользователя user в группу group
 function addUserToGroup(user, group) {
 
-    if (allUsers.indexOf(user) === -1) {
-        throw Error ('Не существует пользователя');
+    if (!allUsers.includes(user)) {
+        throw new Error ('Такого пользователя нет');
     }
 
-    if (allGroups.indexOf(group) === -1) {
-        throw Error ('Не существует группы');
+    if (!allGroups.includes(group)) {
+        throw new Error ('Нет такой группы');
     }
 
     allUsers[allUsers.indexOf(user)].groups.push(group);
@@ -57,16 +59,8 @@ function addUserToGroup(user, group) {
 
 // Удаляет пользователя user из группы group. Должна бросить исключение, если пользователя user нет в группе group
 function removeUserFromGroup(user, group) {
-    if (allUsers.indexOf(user) === -1) {
-        throw Error ('Не существует пользователя');
-    }
-
-    if (allGroups.indexOf(group) === -1) {
-        throw Error ('Не существует группы');
-    }
-
     if (allUsers[allUsers.indexOf(user)].groups.length === 0) {
-        throw Error ("Некорректные данные");
+        throw new Error ("Некорректные данные");
     }
 
     allUsers[allUsers.indexOf(user)].groups.splice(allUsers[allUsers.indexOf(user)].groups.indexOf(group, 1));
@@ -80,25 +74,26 @@ function rights() {
 
 // Создает новое право с именем name и возвращает его
 function createRight(name) {
-    let right = {
-        name: name
-    }
-
-    allRights.push(right);
-    return right;
+    allRights.push(name);
+    return name;
 }
 
 // Удаляет право right
 function deleteRight(right) {
     if (!right) {
-        throw Error('It is not a right');
+        throw new Error('It is not a right');
     }
 
-    if (allRights.indexOf(right) === -1) {
-        throw Error('the operation was performed earlier');
+    if (!allRights.includes(right)) {
+        throw new Error('the operation was performed earlier');
     }
 
     allRights.splice(allRights.indexOf(right), 1);
+    for (let key in rightsInGroups) {
+        if (rightsInGroups[key].includes(right)) {
+            rightsInGroups[key].splice(rightsInGroups[key].indexOf(right), 1)
+        }
+    }
 }
 
 // Возвращает массив групп
@@ -108,92 +103,145 @@ function groups() {
 
 // Создает новую группу и возвращает её.
 function createGroup(name) {
-    let group = {
-        name: name,
-        rights: []
-    }
-    allGroups.push(group);
-    return group;
+    allGroups.push(name);
+    rightsInGroups[name] = [];
+
+    return name;
 }
 
 // Удаляет группу group
 function deleteGroup(group) {
     if (!group) {
-        throw Error('It is not a group');
+        throw new Error('It is not a group');
     }
 
-    if (allGroups.indexOf(group) === -1) {
-        throw Error('the operation was performed earlier');
+    if (!allGroups.includes(group)) {
+        throw new Error('the operation was performed earlier');
     }
 
+    delete rightsInGroups[group];
     allGroups.splice(allGroups.indexOf(group), 1);
+    allUsers.forEach(function (user) {
+        if (user.groups.includes(group)) {
+            user.groups.splice(user.groups.indexOf(group), 1)
+        }
+    })
 }
 
 // Возвращает массив прав, которые принадлежат группе group
 function groupRights(group) {
-    return group.rights;
+    return rightsInGroups[group]
 }
 
 // Добавляет право right к группе group
 function addRightToGroup(right, group) {
-    if (allRights.indexOf(right) === -1) {
-        throw Error ('Не существует права');
+    if (!allRights.includes(right)) {
+        throw new Error ('Не существует права');
     }
 
-    if (allGroups.indexOf(group) === -1) {
-        throw Error ('Не существует группы');
+    if (!allGroups.includes(group)) {
+        throw new Error ('Не существует группы');
     }
-    group.rights.push(right);
+    rightsInGroups[group].push(right)
 }
 
 // Удаляет право right из группы group. Должна бросить исключение, если права right нет в группе group
 function removeRightFromGroup(right, group) {
-    if (allRights.indexOf(right) === -1) {
-        throw Error ('Не существует права');
+    if (!rightsInGroups[group].includes(right)) {
+        throw new Error("В этой группе не содержится данного правила")
     }
-
-    if (allGroups.indexOf(group) === -1) {
-        throw Error ('Не существует группы');
-    }
-
-    if (allGroups[allGroups.indexOf(group)].rights.length === 0) {
-        throw Error ("Некорректные данные");
-    }
-    allGroups[allGroups.indexOf(group)].rights.splice(allGroups[allGroups.indexOf(group)].rights.indexOf(group, 1));
+    rightsInGroups[group].splice(rightsInGroups[group].indexOf(right), 1)
 }
 
+//создание сессии пользователя в системе
 function login(username, password) {
-    for (let i = 0; i < allUsers.length; i++) {
-        if (allUsers[i].name === username && allUsers[i].password === password) {
-            return true;
+    if (!username && !password) {
+        let guest = {
+            name: 'guest',
+            group: 'guestGroup'
+        }
+        let guestRight = 'guestRight';
+        allUsers.push(guest);
+        addRightToGroup(guestRight, guest.group);
+        session[guest.name] = true;
+        return true;
+    }
+
+    let filteredUser = allUsers.filter(user => user.name == username && user.password == password);
+
+    if (!session[username] && filteredUser.length) {
+        session[username] = true;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+//проверка на существование сессии пользователя
+function currentUser() {
+    for (let key in session) {
+        if (session[key]) {
+            return allUsers.filter(user => user.name == key)[0];
         }
     }
 }
 
-function currentUser() {
-    
-}
-
+//выход пользователя из системы
 function logout() {
-    
+    session[currentUser().name] = false;
 }
 
+//проверка на то, есть  ли у пользователя переданное право
 function isAuthorized(user, right) {
-    // user.groups.forEach(group => {      //тут вообще игнорируются все последующие права в группе, считывется только первое
-    //     if (group.rights[allRights.indexOf(right)].name === right.name) {
-    //         return true
-    //     }
-    // });
+    if (!allUsers.includes(user)) {
+        throw new error('Не сущесвует пользователя'); 
+    }
+    if (!allRights.includes(right)) {
+        throw new error('Не существует права'); 
+    }
 
-    // user.groups.forEach(group => {
-    //     group.rights.forEach(onlyRight => {
-    //         if (onlyRight.name === right.name) {
-    //             return true;
-    //         }
-    //     })
-    // });
+    function userRights (user) {
+        return allUsers.filter(item => item.name == user.name)[0].groups.map(group => rightsInGroups[group]);
+    }
 
-    user.groups.some(group => {                 //не выходит из функции после первого найденного совпадения
-        group.rights.some(element => element.name === right.name);
-    });
+    let authorized = false;
+    userRights(user).forEach(function (array) { 
+        if (array.includes(right)) {
+            authorized = true;
+        } 
+    })
+    return authorized;
 }
+
+let otherUser;
+let loginWithSomePermissions = false;
+
+function loginAs (user) {
+    if (isAuthorized(currentUser(), "administrator")) {
+        otherUser = currentUser();
+        logout();
+        loginWithSomePermissions = true;
+        login(user.name, user.password);
+    } else {
+        throw new error('У данного пользователя нету необходимых прав доступа');
+    }
+}
+
+function securityWrapper (action, right) {
+    let callToAction = function () {
+        if (isAuthorized(currentUser(), right)) {
+            action()
+        } else {
+            throw new error('У данного пользователя нету соответствующих прав на выполнение данного действия');
+        }
+    }
+    return callToAction();
+}
+
+
+
+
+
+
+
+
