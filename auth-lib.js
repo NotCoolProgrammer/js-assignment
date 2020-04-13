@@ -161,7 +161,6 @@ function login(username, password) {
             group: 'guestGroup'
         }
         let guestRight = 'guestRight';
-        allUsers.push(guest);
         addRightToGroup(guestRight, guest.group);
         session[guest.name] = true;
         return true;
@@ -228,14 +227,14 @@ function loginAs (user) {
 }
 
 function securityWrapper (action, right) {
-    let callToAction = function () {
+    let callToAction = function (arg1, arg2) {
         if (isAuthorized(currentUser(), right)) {
-            action()
+            action(arg1, arg2);
         } else {
             throw new error('У данного пользователя нету соответствующих прав на выполнение данного действия');
         }
     }
-    return callToAction();
+    return callToAction;
 }
 
 
